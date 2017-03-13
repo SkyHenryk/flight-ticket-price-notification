@@ -23,13 +23,11 @@ class FlightTicketPriceNotificationFromSkyscanner():
     }]
 
     def start(self):
-
         for condition in self.conditions:
             parsedFlightTicketInfoData = self.parseFlightTicketInfoFromSkyscanner(condition)
             flightTicketInfoData = self.handlingFlightTicketInfo(condition,parsedFlightTicketInfoData)
             self.notifyThoughEmail(condition,flightTicketInfoData)
         pass
-
 
     def parseFlightTicketInfoFromSkyscanner(self, condition):
         skyscannerSessionUrl = "http://business.skyscanner.net/apiservices/pricing/v1.0/"
@@ -66,9 +64,7 @@ class FlightTicketPriceNotificationFromSkyscanner():
         pollingResponse = json.loads(requests.request("GET", skyscannerPollingUrl, params=querystring).content)
         return pollingResponse
 
-
     def handlingFlightTicketInfo(self, condition, parsedFlightTicketInfoData):
-
         flightTicketInfoArray = []
         itineraries = parsedFlightTicketInfoData.get("Itineraries",[])
         legs = parsedFlightTicketInfoData.get("Legs",[])
@@ -77,7 +73,6 @@ class FlightTicketPriceNotificationFromSkyscanner():
         places = parsedFlightTicketInfoData.get("Places",[])
         
         for itinerary  in itineraries:
-
             flightTicketInfo = {}
             flightTicketInfo['searchDate'] = datetime.datetime.utcnow().strftime("%Y-%m-%d")
             firstitemOutbound = itinerary['OutboundLegId']
@@ -88,12 +83,10 @@ class FlightTicketPriceNotificationFromSkyscanner():
             flightTicketInfo["price"] = int(itinerary['PricingOptions'][0]['Price'])
 
             for agent in agents:
-
                 if int(firstitemSeller) == int(agent["Id"]):
                     flightTicketInfo['seller'] = agent["Name"]
 
             for leg in legs:
-
                 if leg["Id"].find(firstitemOutbound) > -1:
                     firstitemOriginStationNum = leg["OriginStation"]
                     firstitemDestinationStationNum = leg["DestinationStation"]
@@ -123,12 +116,12 @@ class FlightTicketPriceNotificationFromSkyscanner():
 
             flightTicketInfo.update(condition)
             flightTicketInfoArray.append(flightTicketInfo)
+
         pprint.pprint(flightTicketInfoArray)
         return flightTicketInfoArray
 
 
     def notifyThoughEmail(self, condition, flightTicketInfoArray):
-
         notifyMinPrice = condition.get("notifyMinPrice")
         notifyCheckArray = []
 
@@ -136,6 +129,7 @@ class FlightTicketPriceNotificationFromSkyscanner():
             price = flightTicketInfo.get("price")
             if price is None:
                 continue
+
             if int(notifyMinPrice) > int(price):
                 notifyCheckArray.append(flightTicketInfo)
 
@@ -149,6 +143,7 @@ class FlightTicketPriceNotificationFromSkyscanner():
                           "to": self.MailgunEmail,
                           "subject": "congratulation! The ticket price is less then your minimum price filter.",
                           "text": json.dumps(notifyCheckArray, sort_keys=True, indent=4)})
+
         return notifyCheckArray
 
 if __name__ == '__main__':
